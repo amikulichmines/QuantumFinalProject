@@ -79,11 +79,11 @@ class Chess1D:
     def pieces_left(self, board, color):
         numPieces = 0
         for piece in board:
-            if piece.color == color:
+            if piece.color == color and piece.id != 0:
                 numPieces += 1
         if numPieces == 1:
-            return True
-        return False
+            return False
+        return True
 
     def space(self, board, loc, color):
         pass
@@ -156,13 +156,14 @@ class Chess1D:
         for board in self.possiblePlays:
             self.whiteVictoriesByPieces = 0
             self.blackVictoriesByPieces = 0
-            self.reset_board()
-            self.calculate_possible_plays(board, 1)
-            for board in self.possiblePlays:
-                if not self.pieces_left(board, 1):
-                    self.whiteVictoriesByPieces += 1
-                if not self.pieces_left(board, 0):
-                    self.blackVictoriesByPieces += 1
+            self.possiblePlays=[]
+            self.calculate_all_possible_games(board, 1)
+            # for possibleBoard in self.possiblePlays:
+            #     # print([piece.string_representation() for piece in possibleBoard])
+            #     if not self.pieces_left(possibleBoard, 1):
+            #         self.whiteVictoriesByPieces += 1
+            #     if not self.pieces_left(possibleBoard, 0):
+            #         self.blackVictoriesByPieces += 1
             print([piece.string_representation() for piece in board])
             print(f"White wins {self.whiteVictoriesByPieces} times, black wins {self.blackVictoriesByPieces} times.\n"
                   f"White wins {self.whiteVictoriesByPieces/(self.whiteVictoriesByPieces+self.blackVictoriesByPieces)} ")
@@ -174,21 +175,26 @@ class Chess1D:
             2: self.knight,
             3: self.king
         }
-        # print("".join([piece.string_representation() for piece in board]))
         initialSize = len(self.possiblePlays)
         for loc in range(len(self.board)):
             if board[loc].color == color and board[loc].id != 0:
                 move[board[loc].id](board, loc, board[loc].color)
 
         for newboard in self.possiblePlays[initialSize:]:
-            self.calculate_all_possible_games(newboard, 1 - color)
+            if not self.pieces_left(newboard, 1):
+                self.whiteVictoriesByPieces += 1
+            elif not self.pieces_left(newboard, 0):
+                self.blackVictoriesByPieces += 1
+            else:
+                self.calculate_all_possible_games(newboard, 1 - color)
 
 chess = Chess1D()
 chess.calculate_possible_plays(board=chess.board, color=0)
 
 print("Starting board:\n", [piece.string_representation() for piece in chess.board])
 print()
+for board in chess.get_all_possible_plays():
+    print(board)
+print(len(chess.possiblePlays))
 chess.get_best_move_for_white()
-# for board in chess.get_all_possible_plays():
-#     print(board)
-# print(len(chess.possiblePlays))
+
