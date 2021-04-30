@@ -33,9 +33,10 @@ class Chess1D:
     piecesOnBoard = []
     piecesTaken = []
     possiblePlays = []
-
-
-
+    whiteVictoriesByCheckmate = 0
+    whiteVictoriesByPieces = 0
+    blackVictoriesByCheckmate = 0
+    blackVictoriesByPieces = 0
 
     def __init__(self):
         self.move = {
@@ -75,10 +76,19 @@ class Chess1D:
                 return False
         return True
 
+    def pieces_left(self, board, color):
+        numPieces = 0
+        for piece in board:
+            if piece.color == color:
+                numPieces += 1
+        if numPieces == 1:
+            return True
+        return False
+
     def space(self, board, loc, color):
         pass
 
-    def pawn(self, board, loc, color, kingSafe=True):
+    def pawn(self, board, loc, color, kingSafe=True, addToPossiblePlays=True):
         nextBoard = board.copy()
         possiblePlays = []
         forward = 1 - 2 * color
@@ -92,7 +102,7 @@ class Chess1D:
                     possiblePlays.append(nextBoard)
         return possiblePlays
 
-    def knight(self, board, loc, color, kingSafe=True):
+    def knight(self, board, loc, color, kingSafe=True, addToPossiblePlays=True):
         forward = 1 - 2 * color
         back = -1 * forward
         possiblePlays = []
@@ -111,7 +121,7 @@ class Chess1D:
                         possiblePlays.append(nextBoard)
         return possiblePlays
 
-    def king(self, board, loc, color, kingSafe=True):
+    def king(self, board, loc, color, kingSafe=True, addToPossiblePlays=True):
         forward = 1 - 2 * color
         back = -(1 - 2 * color)
         possiblePlays = []
@@ -140,12 +150,45 @@ class Chess1D:
     def get_all_possible_plays(self):
         return [[piece.string_representation() for piece in board] for board in self.possiblePlays]
 
+    def get_best_move_for_white(self):
+        self.reset_board()
+        self.calculate_possible_plays(self.board, 0)
+        for board in self.possiblePlays:
+            self.whiteVictoriesByPieces = 0
+            self.blackVictoriesByPieces = 0
+            self.reset_board()
+            self.calculate_possible_plays(board, 1)
+            for board in self.possiblePlays:
+                if not self.pieces_left(board, 1):
+                    self.whiteVictoriesByPieces += 1
+                if not self.pieces_left(board, 0):
+                    self.blackVictoriesByPieces += 1
+            print([piece.string_representation() for piece in board])
+            print(f"White wins {self.whiteVictoriesByPieces} times, black wins {self.blackVictoriesByPieces} times.\n"
+                  f"White wins {self.whiteVictoriesByPieces/(self.whiteVictoriesByPieces+self.blackVictoriesByPieces)} ")
+
+    def calculate_all_possible_games(self, board, color):
+        move = {
+            0: self.space,
+            1: self.pawn,
+            2: self.knight,
+            3: self.king
+        }
+        # print("".join([piece.string_representation() for piece in board]))
+        initialSize = len(self.possiblePlays)
+        for loc in range(len(self.board)):
+            if board[loc].color == color and board[loc].id != 0:
+                move[board[loc].id](board, loc, board[loc].color)
+
+        for newboard in self.possiblePlays[initialSize:]:
+            self.calculate_all_possible_games(newboard, 1 - color)
 
 chess = Chess1D()
 chess.calculate_possible_plays(board=chess.board, color=0)
 
 print("Starting board:\n", [piece.string_representation() for piece in chess.board])
 print()
-for board in chess.get_all_possible_plays():
-    print(board)
-print(len(chess.possiblePlays))
+chess.get_best_move_for_white()
+# for board in chess.get_all_possible_plays():
+#     print(board)
+# print(len(chess.possiblePlays))
